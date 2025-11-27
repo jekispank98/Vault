@@ -1,8 +1,6 @@
-
 #[cfg(test)]
 mod tests {
     use crate::vault::{Cell, CellError, Item, Vault, VaultError};
-    use super::*;
 
     #[test]
     fn test_take_item_from_cell() {

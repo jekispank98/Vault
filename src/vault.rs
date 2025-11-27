@@ -16,7 +16,7 @@ pub struct Cell {
 #[derive(Debug, Clone)]
 pub enum CellError {
     Full,
-    NotFound
+    NotFound,
 }
 
 impl Cell {
@@ -56,13 +56,19 @@ impl Cell {
     }
 
     pub fn take(&mut self, name: &str) -> Result<Item, CellError> {
-
+        if let Some(pos) = self.items.iter().position(|i| i.name == name) {
+            let item = self.items.remove(pos);
+            self.used_space = self.used_space.saturating_sub(item.size);
+            Ok(item)
+        } else {
+            Err(CellError::NotFound)
+        }
     }
 }
 
 pub struct Vault {
     pub(crate) cells: HashMap<u32, Cell>,
-    pub(crate) capacity: usize
+    pub(crate) capacity: usize,
 }
 
 #[derive(Debug)]
@@ -77,12 +83,12 @@ impl Vault {
     pub fn new(capacity: usize) -> Self {
         Self {
             cells: HashMap::new(),
-            capacity
+            capacity,
         }
     }
-    pub fn put(&mut self, id: u32, item: Item, cell_capacity: u32) ->Result<(), VaultError> {
+    pub fn put(&mut self, id: u32, item: Item, cell_capacity: u32) -> Result<(), VaultError> {
         if self.cells.len() >= self.capacity && !self.cells.contains_key(&id) {
-            return Err(VaultError::VaultFull)
+            return Err(VaultError::VaultFull);
         }
 
         let cell = self
@@ -108,7 +114,16 @@ impl Vault {
     }
 
     pub fn take(&mut self, id: u32, name: &str) -> Result<Item, VaultError> {
-        // Ваш код здесь
+        if self.cells.is_empty() {
+            Err(VaultError::CellNotFound)
+        } else {
+            match self.cells.get_mut(&id) {
+                Some(cell) => match cell.take(name) {
+                    Ok(item) => Ok(item),
+                    Err(_) => Err(VaultError::ItemNotFound),
+                },
+                None => Err(VaultError::CellNotFound),
+            }
+        }
     }
 }
-
